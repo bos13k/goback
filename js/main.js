@@ -50,13 +50,13 @@ let player = Sprite({
 
 window.addEventListener("keydown", function(e) {
     // jump up
-    if (upmode && e.code == "ArrowUp") {
+    if (upmode && grounded && e.code == "ArrowUp") {
         grounded = false;
         player.dy = -10;
         player.ddy = 0.5;
     }
     // jump down
-    if (!upmode && e.code == "ArrowDown") {
+    if (!upmode && grounded && e.code == "ArrowDown") {
         grounded = false;
         player.dy = 10;
         player.ddy = -0.5;
