@@ -26,7 +26,8 @@ let GREY = '#9E9E9E';
 
 let GRID = 16;
 let PLAYER_HEIGHT = 120;
-let BLOCK_SPEED = -2;
+let INIT_BLOCK_SPEED = -10;
+let BLOCK_SPEED = INIT_BLOCK_SPEED;
 
 /**
  * Background setup
@@ -189,9 +190,13 @@ let frame_count = 0;
 
 let loop = GameLoop({
     update: function () {
-        if (frame_count % 450 === 0 || frame_count === 0) {
-            BLOCK_SPEED -= 0.3;
+        let speed_ratio = BLOCK_SPEED / INIT_BLOCK_SPEED;
+        if (frame_count <= 0) {
+            if (BLOCK_SPEED >= -20) {
+                BLOCK_SPEED -= 0.5;
+            }
             get_random_block();
+            frame_count = 80 / speed_ratio;
         }
         block_pool.update();
 
@@ -199,7 +204,7 @@ let loop = GameLoop({
         player.update();
         player.checkPos();
 
-        frame_count++;
+        frame_count--;
     },
     render: function () {
         fillBackground(upmode);
