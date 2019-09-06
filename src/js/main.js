@@ -5,8 +5,6 @@ let { canvas, context } = init();
  * Game params
  */
 let dpi = window.devicePixelRatio;
-// canvas.width = document.body.clientWidth;
-// canvas.height = document.body.clientHeight;
 canvas.setAttribute('width', getComputedStyle(canvas).getPropertyValue('width').slice(0, -2) * dpi);
 canvas.setAttribute('height', getComputedStyle(canvas).getPropertyValue('height').slice(0, -2) * dpi);
 let ctx = getContext();
