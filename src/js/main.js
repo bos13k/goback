@@ -1,5 +1,5 @@
-let { init, getContext, Sprite, GameLoop } = kontra;
-let { canvas, context } = init();
+let {init, getContext, Sprite, Pool, GameLoop} = kontra;
+let {canvas, context} = init();
 
 /**
  * Game params
@@ -22,6 +22,12 @@ let PLAYER_FRAME2 = 'img/player2.png';
 let upmode = true;
 let grounded = true;
 
+let GREY = '#9E9E9E';
+
+let GRID = 16;
+let PLAYER_HEIGHT = 120;
+let BLOCK_SPEED = -2;
+
 /**
  * Background setup
  */
@@ -42,26 +48,26 @@ function fillBackground(upmode) {
 function playShort(moveType, upmode) {
     switch (moveType) {
         case "jump":
-            D=upmode?[13,12,10]:[13,12,15]
+            D = upmode ? [13, 12, 10] : [13, 12, 15]
             break;
         case "flip":
-            D=upmode?[10,15]:[15,10]
+            D = upmode ? [10, 15] : [15, 10]
             break;
         default:
             D = [];
     }
-    with(new AudioContext)
-    with(G=createGain())
-    for(i in D)
-    with(createOscillator())
-    if(D[i])
-    connect(G),
-    G.connect(destination),
-    start(i*.1),
-    frequency.setValueAtTime(440*1.06**(13-D[i]),i*.1),
-    gain.setValueAtTime(1,i*.1),
-    gain.setTargetAtTime(.0001,i*.1+.08,.005),
-    stop(i*.1+.09)
+    with (new AudioContext)
+        with (G = createGain())
+            for (i in D)
+                with (createOscillator())
+                    if (D[i])
+                        connect(G),
+                            G.connect(destination),
+                            start(i * .1),
+                            frequency.setValueAtTime(440 * 1.06 ** (13 - D[i]), i * .1),
+                            gain.setValueAtTime(1, i * .1),
+                            gain.setTargetAtTime(.0001, i * .1 + .08, .005),
+                            stop(i * .1 + .09)
 }
 
 /**
@@ -71,11 +77,11 @@ var player = Sprite({
     x: HALF_WIDTH,
     y: HALF_HEIGHT,
     anchor: {x: 0.5, y: 1},
-    width:60,
-    height:120,
+    width: 60,
+    height: PLAYER_HEIGHT,
     rotation: 0,
     animCount: 0,
-    checkPos: function() {
+    checkPos: function () {
         if (
             (upmode && player.y > HALF_HEIGHT) ||
             (!upmode && player.y < HALF_HEIGHT)) {
@@ -88,12 +94,12 @@ var player = Sprite({
 });
 let playerImg = new Image();
 playerImg.src = PLAYER_FRAME1;
-playerImg.onload = function() {
+playerImg.onload = function () {
     player.image = playerImg;
 }
 
 // Animation
-let walk = function() {
+let walk = function () {
     if (player.animCount == 30) {
         playerImg.src = PLAYER_FRAME2;
     }
@@ -105,40 +111,99 @@ let walk = function() {
 }
 
 // Controls
-window.addEventListener("keydown", function(e) {
+window.addEventListener("keydown", function (e) {
     // jump up
-    if (upmode && grounded && e.code == "ArrowUp") {
+    if (upmode && grounded && e.code === "ArrowUp") {
         playShort("jump", upmode);
         grounded = false;
         player.dy = -40;
         player.ddy = 2;
     }
     // jump down
-    if (!upmode && grounded && e.code == "ArrowDown") {
+    if (!upmode && grounded && e.code === "ArrowDown") {
         playShort("jump", upmode);
         grounded = false;
         player.dy = 40;
         player.ddy = -2;
     }
     // go backside
-    if (grounded && e.code == "Space") {
+    if (grounded && e.code === "Space") {
         playShort("flip", upmode);
         upmode = !upmode;
         player.rotation = Math.PI - player.rotation;
     }
 });
 
+
+/**
+ * Block Pool
+ */
+let block_pool = Pool({
+    create: Sprite,
+    maxSize: 32,
+    // fill: true
+});
+
+
+function update_speed() {
+    this.dx = BLOCK_SPEED;
+    this.advance();
+}
+
+function generate_block(isUpper, height, speed) {
+
+    block_pool.get({
+        x: canvas.width,
+        y: canvas.height / 2,
+        anchor: isUpper ? {x: 0.5, y: 1} : {x: 0.5, y: 0},
+        color: GREY,
+        width: canvas.width / GRID,
+        height: PLAYER_HEIGHT * height,
+        dx: speed,
+        ttl: canvas.width / Math.abs(speed),
+        update: update_speed,
+
+    });
+}
+
+function get_random_block() {
+    let block_num = Math.floor(Math.random() * 2) + 1;
+
+    if (block_num === 1) {
+        let isUpper = Math.floor(Math.random() * 2) === 0;
+        let height = Math.floor(Math.random() * 3) + 1;
+        generate_block(isUpper, height, BLOCK_SPEED)
+    } else if (block_num === 2) {
+        let height_up = Math.floor(Math.random() * 3) + 1;
+        let height_down = (height_up > 1) ? 1 : Math.floor(Math.random() * 3) + 1;
+        generate_block(true, height_up, BLOCK_SPEED);
+        generate_block(false, height_down, BLOCK_SPEED);
+    }
+}
+
+
 /**
  * Game loop
  */
+let frame_count = 0;
+
 let loop = GameLoop({
-    update: function() {
+    update: function () {
+        if (frame_count % 450 === 0 || frame_count === 0) {
+            BLOCK_SPEED -= 0.3;
+            get_random_block();
+        }
+        block_pool.update();
+
         walk();
         player.update();
         player.checkPos();
+
+        frame_count++;
     },
-    render: function() {
+    render: function () {
         fillBackground(upmode);
+        block_pool.render();
         player.render();
     }
 });
