@@ -19,12 +19,12 @@ let DARK_COLOR = '#333333';
 let LIGHT_COLOR = '#ffffff';
 let PLAYER_FRAME1 = 'img/player1.png';
 let PLAYER_FRAME2 = 'img/player2.png';
-let upmode = true;
+let isUpMode = true;
 let grounded = true;
 
 let GREY = '#9E9E9E';
 
-let GRID = 16;
+let GRID = 20;
 let PLAYER_HEIGHT = 120;
 let INIT_BLOCK_SPEED = -10;
 let BLOCK_SPEED = INIT_BLOCK_SPEED;
@@ -84,8 +84,8 @@ var player = Sprite({
     animCount: 0,
     checkPos: function () {
         if (
-            (upmode && player.y > HALF_HEIGHT) ||
-            (!upmode && player.y < HALF_HEIGHT)) {
+            (isUpMode && player.y > HALF_HEIGHT) ||
+            (!isUpMode && player.y < HALF_HEIGHT)) {
             player.y = HALF_HEIGHT;
             player.dy = 0;
             player.ddy = 0;
@@ -93,44 +93,45 @@ var player = Sprite({
         }
     }
 });
+
 let playerImg = new Image();
 playerImg.src = PLAYER_FRAME1;
 playerImg.onload = function () {
     player.image = playerImg;
-}
+};
 
 // Animation
 let walk = function () {
-    if (player.animCount == 30) {
+    if (player.animCount === 30) {
         playerImg.src = PLAYER_FRAME2;
     }
-    if (player.animCount == 60) {
+    if (player.animCount === 60) {
         playerImg.src = PLAYER_FRAME1;
         player.animCount = 0;
     }
     player.animCount += 1;
-}
+};
 
 // Controls
 window.addEventListener("keydown", function (e) {
     // jump up
-    if (upmode && grounded && e.code === "ArrowUp") {
-        playShort("jump", upmode);
+    if (isUpMode && grounded && e.code === "ArrowUp") {
+        playShort("jump", isUpMode);
         grounded = false;
         player.dy = -40;
         player.ddy = 2;
     }
     // jump down
-    if (!upmode && grounded && e.code === "ArrowDown") {
-        playShort("jump", upmode);
+    if (!isUpMode && grounded && e.code === "ArrowDown") {
+        playShort("jump", isUpMode);
         grounded = false;
         player.dy = 40;
         player.ddy = -2;
     }
     // go backside
     if (grounded && e.code === "Space") {
-        playShort("flip", upmode);
-        upmode = !upmode;
+        playShort("flip", isUpMode);
+        isUpMode = !isUpMode;
         player.rotation = Math.PI - player.rotation;
     }
 });
@@ -142,12 +143,15 @@ window.addEventListener("keydown", function (e) {
 let block_pool = Pool({
     create: Sprite,
     maxSize: 32,
-    // fill: true
 });
 
-
-function update_speed() {
+function update_block() {
     this.dx = BLOCK_SPEED;
+    if (isUpMode) {
+        this.color = this.isUpper ? DARK_COLOR : LIGHT_COLOR;
+    } else {
+        this.color = this.isUpper ? LIGHT_COLOR : DARK_COLOR;
+    }
     this.advance();
 }
 
@@ -157,13 +161,13 @@ function generate_block(isUpper, height, speed) {
         x: canvas.width,
         y: canvas.height / 2,
         anchor: isUpper ? {x: 0.5, y: 1} : {x: 0.5, y: 0},
-        color: GREY,
+        color: isUpper ? DARK_COLOR : LIGHT_COLOR,
         width: canvas.width / GRID,
         height: PLAYER_HEIGHT * height,
         dx: speed,
         ttl: canvas.width / Math.abs(speed),
-        update: update_speed,
-
+        isUpper: isUpper,
+        update: update_block,
     });
 }
 
@@ -192,7 +196,7 @@ let loop = GameLoop({
     update: function () {
         let speed_ratio = BLOCK_SPEED / INIT_BLOCK_SPEED;
         if (frame_count <= 0) {
-            if (BLOCK_SPEED >= -20) {
+            if (BLOCK_SPEED > -40) {
                 BLOCK_SPEED -= 0.5;
             }
             get_random_block();
@@ -207,7 +211,7 @@ let loop = GameLoop({
         frame_count--;
     },
     render: function () {
-        fillBackground(upmode);
+        fillBackground(isUpMode);
         block_pool.render();
         player.render();
     }
