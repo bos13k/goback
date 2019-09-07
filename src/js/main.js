@@ -21,13 +21,15 @@ let PLAYER_FRAME1 = 'img/player1.png';
 let PLAYER_FRAME2 = 'img/player2.png';
 let isUpMode = true;
 let grounded = true;
+// let hasSecondJump = true;
 
-let GREY = '#9E9E9E';
 
 let GRID = 20;
 let PLAYER_HEIGHT = 120;
+let PLAYER_WIDTH = 60;
 let INIT_BLOCK_SPEED = -10;
 let BLOCK_SPEED = INIT_BLOCK_SPEED;
+let BLOCK_WIDTH = canvas.width / GRID;
 
 /**
  * Background setup
@@ -78,10 +80,11 @@ var player = Sprite({
     x: HALF_WIDTH,
     y: HALF_HEIGHT,
     anchor: {x: 0.5, y: 1},
-    width: 60,
+    width: PLAYER_WIDTH,
     height: PLAYER_HEIGHT,
     rotation: 0,
     animCount: 0,
+    hasSecondJump: false,
     checkPos: function () {
         if (
             (isUpMode && player.y > HALF_HEIGHT) ||
@@ -115,11 +118,26 @@ let walk = function () {
 // Controls
 window.addEventListener("keydown", function (e) {
     // jump up
-    if (isUpMode && grounded && e.code === "ArrowUp") {
-        playShort("jump", isUpMode);
-        grounded = false;
-        player.dy = -40;
-        player.ddy = 2;
+    // if (isUpMode && grounded && e.code === "ArrowUp") {
+    //     playShort("jump", isUpMode);
+    //     grounded = false;
+    //     player.dy = -40;
+    //     player.ddy = 2;
+    // }
+    if (e.code === "ArrowUp") {
+        if (isUpMode && grounded) {
+            playShort("jump", isUpMode);
+            grounded = false;
+            player.dy = -40;
+            player.ddy = 2;
+            player.hasSecondJump = true;
+        }
+        else if (isUpMode && !grounded && player.hasSecondJump) {
+            playShort("jump", isUpMode);
+            player.dy = -20;
+            player.ddy = 2;
+            player.hasSecondJump = false;
+        }
     }
     // jump down
     if (!isUpMode && grounded && e.code === "ArrowDown") {
@@ -133,6 +151,10 @@ window.addEventListener("keydown", function (e) {
         playShort("flip", isUpMode);
         isUpMode = !isUpMode;
         player.rotation = Math.PI - player.rotation;
+    }
+    // restart
+    if (e.code === "Space" && loop.isStopped) {
+        loop.start();
     }
 });
 
@@ -152,6 +174,8 @@ function update_block() {
     } else {
         this.color = this.isUpper ? LIGHT_COLOR : DARK_COLOR;
     }
+    check_collision(this, isUpMode);
+
     this.advance();
 }
 
@@ -162,7 +186,7 @@ function generate_block(isUpper, height, speed) {
         y: canvas.height / 2,
         anchor: isUpper ? {x: 0.5, y: 1} : {x: 0.5, y: 0},
         color: isUpper ? DARK_COLOR : LIGHT_COLOR,
-        width: canvas.width / GRID,
+        width: BLOCK_WIDTH,
         height: PLAYER_HEIGHT * height,
         dx: speed,
         ttl: canvas.width / Math.abs(speed),
@@ -186,6 +210,24 @@ function get_random_block() {
     }
 }
 
+function check_collision(block, isUpMode) {
+    // if (isUpMode && block.anchor.y === 1) {
+    //     // if (block.x - BLOCK_WIDTH / 2 <= player.x + PLAYER_WIDTH / 2 && block.x + BLOCK_WIDTH / 2 >= player.x - PLAYER_WIDTH / 2 && player.y <= HALF_HEIGHT + block.height) {
+    //     //     loop.stop();
+    //     // }
+    //     // if (player.x + PLAYER_WIDTH / 2 >= block.x - BLOCK_WIDTH / 2 && player.x - PLAYER_WIDTH / 2 <= block.x + BLOCK_WIDTH / 2 && player.y <= HALF_HEIGHT + block.height) {
+    //     //     alert('player y: '+player.y + ' block h: ' + (HALF_HEIGHT + block.height));
+    //     //     loop.stop();
+    //     // }
+    //     if (player.collidesWith(block)) {
+    //         loop.stop();
+    //     }
+    // }
+    if (player.collidesWith(block)) {
+        loop.stop()
+    }
+
+}
 
 /**
  * Game loop
