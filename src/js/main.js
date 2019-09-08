@@ -224,9 +224,18 @@ function check_collision(block, isUpMode) {
     //     }
     // }
     if (player.collidesWith(block)) {
-        loop.stop()
+        game_over();
+        loop.stop();
+        block_pool.clear();
     }
 
+}
+
+function game_over() {
+    // ctx.fillRect(100, 200, 300, 300);
+
+    ctx.font = '200px serif';
+    ctx.fillText('Game Over', 100, 200);
 }
 
 /**
@@ -238,8 +247,8 @@ let loop = GameLoop({
     update: function () {
         let speed_ratio = BLOCK_SPEED / INIT_BLOCK_SPEED;
         if (frame_count <= 0) {
-            if (BLOCK_SPEED > -40) {
-                BLOCK_SPEED -= 0.5;
+            if (BLOCK_SPEED > -16) {
+                BLOCK_SPEED -= 5;
             }
             get_random_block();
             frame_count = 80 / speed_ratio;
